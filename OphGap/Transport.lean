@@ -11,13 +11,14 @@ under hypotheses that are themselves decided by the Lean kernel on the literal d
 
 * a vertex relabelling `new : ℕ → ℕ`, injective on the original carrier list (witnessed by
   a left inverse `oldT`), landing in `0, …, n-1`;
-* the multiset of *canonicalised* signed edges (endpoints sorted, so orientation is
-  forgotten) of the original graph, pushed through `new`, equals that of the relabelled
-  graph — decided by sorting both lists with a fuel-based mergesort and comparing.
+* an edge reordering `perm : ℕ → ℕ` (with left inverse `invPerm`) carrying each original edge,
+  relabelled by `new` and *canonicalised* (endpoints sorted, so orientation is forgotten), onto
+  the equal canonicalised edge of the relabelled list — decided by one linear pass over the
+  lists with `O(log n)` table lookups.
 
 The mathematical content is the quadratic form `x ⬝ Dᵀ D x = ∑_e (σ_e x(tgt e) - x(src e))²`:
-each summand is invariant under reversing an edge whenever `σ_e = ±1`, and a sum over a
-list is invariant under permutation. So the form of the original graph at `x` equals the
+each summand is invariant under reversing an edge whenever `σ_e = ±1`, and a sum over
+`Fin m` is invariant under an index bijection. So the form of the original graph at `x` equals the
 form of the relabelled graph at `x ∘ new⁻¹`; injectivity of `D` transports.
 
 No `native_decide`, no `sorry`, no axioms beyond `propext`, `Classical.choice`, `Quot.sound`.
