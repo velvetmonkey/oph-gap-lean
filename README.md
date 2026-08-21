@@ -1,7 +1,7 @@
 # oph-gap-lean
 
 Private, local-only Lean 4 / Mathlib corroboration of the OPH source-gap brick.
-No remote. Build only with `/home/monkey/bin/leanbuild build`.
+Build only with `/home/monkey/bin/leanbuild build`.
 
 `OphGap/SignedGap.lean` proves, with zero `sorry`:
 
@@ -30,3 +30,27 @@ See `/home/monkey/gapproof-report.md` for the full account.
   kernel reject the same certificate.
 
 See `/home/monkey/gapwitness-report.md`.
+
+## gapinvariance (2026-08-20): the theorem now names OPH's ORIGINAL carrier ids
+
+The gapwitness theorems were about a BFS-relabelled copy of the graph; the relabelling was
+checked only in Python. That step is now proved in Lean (Ending A, a transport theorem), with
+the transport's hypotheses decided by the kernel on the literal data.
+
+* `OphGap/Transport.lean` — `transportCheck n newT oldT nodes origEs es : Bool` (vertex map
+  injective on the carrier list via a kernel-checked left inverse; every edge endpoint a carrier;
+  multiset of canonical signed edges equal, decided by a fuel-based mergesort) and its soundness
+  `origGram_posDef_of_transportCheck : check … = true → transportCheck … = true →
+  ((origD nodes origEs _)ᵀ * origD nodes origEs _).PosDef`, where `origD` is indexed by
+  `{v // v ∈ nodes}` (OPH's carrier ids) and `Fin origEs.length` (OPH's edges, OPH's order and
+  orientation). Vacuity controls on the gapless square: `sqRelabBij_refused`,
+  `sqRelabCollapse_refused`, `sqToTri_refused`; positive control `triPerm_accepted`.
+* `OphGap/OphOrigData.lean` — OPH's node list and edge list with ORIGINAL ids (pure input, emitted
+  by `tools/gen_orig_data.py` from OPH's own `seam_complex` output), plus two lookup-tree hints.
+* `OphGap/OphOrigWitness.lean` — `transport_true` (kernel), `oph_original_gram_posDef`,
+  `oph_original_eigenvalues_pos`, `oph_original_kernel_trivial`; Ending B measured
+  (`endingB_direct_check_false`); negative controls `collision_refused`, `sign_mismatch_refused`,
+  `wrong_vertex_set_refused`.
+
+Python now only PRODUCES data files; no step of the argument is justified outside Lean.
+See `/home/monkey/gapinvariance-report.md`.
