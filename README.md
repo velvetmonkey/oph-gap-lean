@@ -1,7 +1,28 @@
 # oph-gap-lean
 
-Private, local-only Lean 4 / Mathlib corroboration of the OPH source-gap brick.
-Build only with `/home/monkey/bin/leanbuild build`.
+Public Apache-2.0 Lean 4 / Mathlib corroboration of the OPH source-gap brick.
+
+![CI](https://github.com/velvetmonkey/oph-gap-lean/actions/workflows/ci.yml/badge.svg?branch=main)
+
+This proves the gap for ONE frozen graph: the graph pinned by
+`domain_freeze_sha256 = a0be6fc64aecf9ca375fd91c57315e8af5e5cf161c99611f4844ba8f452ae7ff`,
+with 8,662 carriers and 11,816 seams. It does NOT prove a general theorem about
+all graphs, all OPH data, or all source-gap claims.
+
+## Reproduce the check
+
+The project uses the toolchain named in `lean-toolchain` (`leanprover/lean4:v4.28.0`)
+and pins Mathlib to `v4.28.0` in `lakefile.lean`. From the repository root, run:
+
+```sh
+lake exe cache get
+lake build
+```
+
+The cache command downloads Mathlib's prebuilt artifacts; without it, Lake may
+try to build Mathlib from source. A cold build is roughly 30 minutes and may
+need about 12 GB of disk, depending on the machine. The CI workflow runs both
+commands on every push and pull request.
 
 `OphGap/SignedGap.lean` proves, with zero `sorry`:
 
@@ -55,7 +76,9 @@ the transport's hypotheses decided by the kernel on the literal data.
 * `OphGap/OphOrigWitness.lean` — `transport_true` (assembled from the slices by proved `_split`
   lemmas), `oph_original_gram_posDef`, `oph_original_eigenvalues_pos`, `oph_original_kernel_trivial`.
 * `OphGap/OphOrigControls.lean` — Ending B measured (`endingB_direct_check_false`); negative controls
-  `collision_refused`, `edge_collision_refused`, `sign_mismatch_refused`, `wrong_vertex_set_refused`.
+  `tampered_refused`, `collision_refused`, `edge_collision_refused`, `sign_mismatch_refused`,
+  `wrong_vertex_set_refused`. The build covers all five refusal controls: malformed or tampered
+  certificates are rejected by the checker rather than silently accepted.
 
 Python now only PRODUCES data files; no step of the argument is justified outside Lean.
 See `/home/monkey/gapinvariance-report.md`.
