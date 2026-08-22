@@ -96,6 +96,7 @@ jobs:
           status=$?
           printf '%s\n' "$output"
           printf 'NEGATIVE_CONTROL_EXIT_CODE=%s\n' "$status"
+          printf 'exit_code=%s\n' "$status" >> "$GITHUB_OUTPUT"
           printf '%s\n' "$output" | grep -E 'check_true|false|unsolved goals|error:'
           test "$status" -ne 0
 
@@ -103,8 +104,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${{ steps.broken-build.outcome }}" != failure ]; then
-            echo "negative control did not fail as required: outcome=${{ steps.broken-build.outcome }}"
+          if [ "${{ steps.broken-build.outputs.exit_code }}" -eq 0 ]; then
+            echo "negative control did not fail as required: exit=${{ steps.broken-build.outputs.exit_code }}"
             exit 1
           fi
           original=$(git hash-object OphGap/OphWitness.lean)
