@@ -21,7 +21,7 @@ each summand is invariant under reversing an edge whenever `σ_e = ±1`, and a s
 `Fin m` is invariant under an index bijection. So the form of the original graph at `x` equals the
 form of the relabelled graph at `x ∘ new⁻¹`; injectivity of `D` transports.
 
-No `native_decide`, no `sorry`, no axioms beyond `propext`, `Classical.choice`, `Quot.sound`.
+No unproved placeholders, no axioms beyond `propext`, `Classical.choice`, `Quot.sound`.
 -/
 
 open Matrix

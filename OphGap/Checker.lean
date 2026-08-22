@@ -15,7 +15,7 @@ A certificate consists of the *ordering* of `es` and a cycle description:
 
 `check n es cyc = true` is decidable by the kernel. The theorem `posDef_of_check`
 shows it implies the Gram matrix `Dᵀ D` of the signed derivative built from `es`
-is positive definite. Nothing here uses `native_decide`.
+is positive definite. The checks use kernel reduction only.
 -/
 
 open Matrix
