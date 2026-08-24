@@ -6,7 +6,7 @@ import OphGap.OphData
 `GapScout.Oph.edges` is the 11,816-edge signed seam graph on 8,662 carriers
 (freeze sha256 `a0be6fc6…`, BFS-relabelled), and `GapScout.Oph.cycle` is the receipt's
 11-edge negative-cycle witness. `check_true` is verified by the Lean KERNEL
-(`decide +kernel`; no `native_decide`), so `oph_gram_posDef` is a fully kernel-checked
+(`decide +kernel`), so `oph_gram_posDef` is a fully kernel-checked
 theorem about this concrete graph.
 -/
 

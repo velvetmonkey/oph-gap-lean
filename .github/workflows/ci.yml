@@ -1,0 +1,120 @@
+name: Lean CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and kernel-token audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install the pinned Lean toolchain
+        uses: leanprover/lean-action@v1
+        with:
+          auto-config: false
+          build: false
+          test: false
+          lint: false
+          use-mathlib-cache: false
+
+      - name: Fetch Mathlib build cache
+        run: lake exe cache get
+
+      - name: Build all default targets
+        run: lake build
+
+      - name: Reject sorry and native_decide in tracked Lean sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          if matches=$(git grep -n -E '\\b(sorry|native_decide)\\b' -- '*.lean'); then
+            printf '%s\n' "$matches"
+            echo 'forbidden proof escape found in tracked Lean source'
+            exit 1
+          else
+            grep_status=$?
+            if [ "$grep_status" -ne 1 ]; then
+              echo "git grep failed with exit code $grep_status"
+              exit "$grep_status"
+            fi
+          fi
+          echo 'tracked Lean sources contain zero sorry and zero native_decide tokens'
+
+      - name: Print established theorem names
+        shell: bash
+        run: |
+          set -euo pipefail
+          git grep -h -E '^[[:space:]]*theorem[[:space:]]+' -- '*.lean' \
+            | sed -E 's/^[[:space:]]*theorem[[:space:]]+([^ :({]+).*/\1/' \
+            | sort -u
+
+  negative-control:
+    name: Negative control (broken scratch proof must fail)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install the pinned Lean toolchain
+        uses: leanprover/lean-action@v1
+        with:
+          auto-config: false
+          build: false
+          test: false
+          lint: false
+          use-mathlib-cache: false
+
+      - name: Fetch Mathlib build cache
+        run: lake exe cache get
+
+      - name: Make a physically broken scratch copy
+        shell: bash
+        run: |
+          set -euo pipefail
+          scratch="$RUNNER_TEMP/ophstand-negative-control"
+          mkdir -p "$scratch"
+          cp -a ./. "$scratch/"
+          target="$scratch/OphGap/OphWitness.lean"
+          sed -i 's/theorem check_true : check n edges cycle = true/theorem check_true : check n edges cycle = false/' "$target"
+          grep -n 'theorem check_true' "$target"
+          echo "NEGATIVE_CONTROL_BROKEN_FILE=$target" >> "$GITHUB_ENV"
+
+      - name: Broken proof must make lake build fail
+        id: broken-build
+        shell: bash
+        continue-on-error: true
+        run: |
+          set +e
+          output=$(cd "$(dirname "$NEGATIVE_CONTROL_BROKEN_FILE")/.." && lake build 2>&1)
+          status=$?
+          printf '%s\n' "$output"
+          printf 'NEGATIVE_CONTROL_EXIT_CODE=%s\n' "$status"
+          printf 'exit_code=%s\n' "$status" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$output" | grep -E 'check_true|false|unsolved goals|error:'
+          test "$status" -ne 0
+
+      - name: Assert the broken-build step was red and restore exactly
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.broken-build.outputs.exit_code }}" -eq 0 ]; then
+            echo "negative control did not fail as required: exit=${{ steps.broken-build.outputs.exit_code }}"
+            exit 1
+          fi
+          original=$(git hash-object OphGap/OphWitness.lean)
+          scratch_file="$NEGATIVE_CONTROL_BROKEN_FILE"
+          cp OphGap/OphWitness.lean "$scratch_file"
+          restored=$(git hash-object "$scratch_file")
+          printf 'ORIGINAL_SHA256=%s\nRESTORED_SHA256=%s\n' \
+            "$(sha256sum OphGap/OphWitness.lean | cut -d' ' -f1)" \
+            "$(sha256sum "$scratch_file" | cut -d' ' -f1)"
+          test "$original" = "$restored"
+          cmp -s OphGap/OphWitness.lean "$scratch_file"
+          echo 'scratch proof restored byte-for-byte'

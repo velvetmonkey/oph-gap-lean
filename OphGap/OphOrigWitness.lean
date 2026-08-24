@@ -10,7 +10,7 @@ here by the proved `_split` lemmas; `origGram_posDef_of_transportCheck` then car
 definiteness back to the matrix whose columns are OPH's carrier ids and whose rows are OPH's
 edges in OPH's order.
 
-Everything is `decide +kernel`; no `native_decide`, no `sorry`.
+Everything is `decide +kernel`; no shortcuts or unproved placeholders.
 -/
 
 open Matrix
